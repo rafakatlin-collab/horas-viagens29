@@ -1,0 +1,9 @@
+{
+  "name": "Horas Viagens29",
+  "short_name": "Horas29",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0f5fa8",
+  "icons": []
+}
