@@ -135,6 +135,7 @@ async function createFirstAccess(){
         : 'Erro: '+(e.code||'desconhecido')+' - '+(e.message||''),
       'error'
     );
+     }
   }
 function stopListeners(){unsub.forEach(f=>f&&f());unsub=[]}
 async function loadProfile(uid){let snap=await getDoc(doc(db,'users',uid));if(!snap.exists())return null;return {id:uid,...snap.data()}}
