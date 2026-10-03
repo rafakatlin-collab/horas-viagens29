@@ -62,8 +62,13 @@ jobs:
           java-version: 21
 
       - name: Restaurar chave de assinatura
+        env:
+          KEYSTORE_ENC_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_ENC_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/viagens29-release.keystore
+          openssl enc -d -aes-256-cbc -pbkdf2 \
+            -in viagens29-release.keystore.enc \
+            -out android/app/viagens29-release.keystore \
+            -pass env:KEYSTORE_ENC_PASSWORD
 
       - name: Gerar APK release
         working-directory: android
