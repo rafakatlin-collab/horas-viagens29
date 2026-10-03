@@ -242,7 +242,7 @@ function renderVehicles(){$('vehiclesList').innerHTML=vehicles.map(v=>`<div clas
 async function delVehicle(id){if(records.some(r=>r.vehicleId===id)){msg('vehicleMsg','Este veículo possui registros e não pode ser excluído.','error');return}if(confirm('Excluir este veículo?'))await deleteDoc(doc(db,'vehicles',id))}
 function renderProfile(){$('profileInfo').innerHTML=`<div style="display:flex;align-items:center;gap:14px">${avatarHTML(current,true)}<div><b>${esc(current.name)}</b><p class="muted" style="margin:5px 0 0">Celular: ${esc(current.phone)}<br>Perfil: ${current.role==='admin'?'Administrador':'Motorista'}</p></div></div>`}
 async function changeMyPhoto(e){let photo=await compressImage(e.target.files[0]);if(!photo)return;await updateDoc(doc(db,'users',current.id),{photo});current.photo=photo;renderProfile()}
-document.querySelectorAll('[data-go]')
+changePassword()
 document.querySelectorAll('[data-go]').forEach(function(botao){
   botao.addEventListener('click', function(){
     go(botao.getAttribute('data-go'));
