@@ -61,7 +61,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-         - name: Restaurar chave de assinatura
+      - name: Restaurar chave de assinatura
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/viagens29-release.keystore
 
