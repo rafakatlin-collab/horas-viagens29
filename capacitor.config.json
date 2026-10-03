@@ -1,0 +1,9 @@
+{
+  "appId": "com.viagens29.horas",
+  "appName": "Horas Viagens29",
+  "webDir": "dist",
+  "server": {
+    "url": "https://rafakatlin-collab.github.io/horas-viagens29/",
+    "cleartext": false
+  }
+}
