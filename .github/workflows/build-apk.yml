@@ -30,7 +30,7 @@ jobs:
         run: npx cap add android
       - name: Configurar ícone do aplicativo
         run: |
-                  sudo apt-get update && sudo apt-get install -y imagemagick
+          sudo apt-get update && sudo apt-get install -y imagemagick
                   
           mkdir -p android/app/src/main/res/mipmap-mdpi
           mkdir -p android/app/src/main/res/mipmap-hdpi
