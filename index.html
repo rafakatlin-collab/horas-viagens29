@@ -205,7 +205,6 @@ document.querySelectorAll('[data-go]').forEach(function(botao){
     go(botao.getAttribute('data-go'));
   });
 });
-});
 $('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('myPhoto').onchange=changeMyPhoto;$('btnLogout').onclick=()=>signOut(auth);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
