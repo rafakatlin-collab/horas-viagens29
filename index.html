@@ -178,7 +178,16 @@ async function delVehicle(id){if(records.some(r=>r.vehicleId===id)){msg('vehicle
 function renderProfile(){$('profileInfo').innerHTML=`<div style="display:flex;align-items:center;gap:14px">${avatarHTML(current,true)}<div><b>${esc(current.name)}</b><p class="muted" style="margin:5px 0 0">Celular: ${esc(current.phone)}<br>Perfil: ${current.role==='admin'?'Administrador':'Motorista'}</p></div></div>`}
 async function changeMyPhoto(e){let photo=await compressImage(e.target.files[0]);if(!photo)return;await updateDoc(doc(db,'users',current.id),{photo});current.photo=photo;renderProfile()}
 
-document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+document.addEventListener('click', function(e){
+  const botao = e.target.closest('[data-go]');
+  if(!botao) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const pagina = botao.dataset.go;
+  if(pagina) go(pagina);
+});
 $('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('myPhoto').onchange=changeMyPhoto;$('btnLogout').onclick=()=>signOut(auth);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
