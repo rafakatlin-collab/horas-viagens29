@@ -62,14 +62,48 @@
 
 <section id="vehicles" class="page hidden"><div class="card"><h2>Cadastrar veículo</h2><div id="vehicleMsg"></div><div class="grid"><div><label>Nome / identificação</label><input id="vName" placeholder="Ex.: G8"></div><div><label>Placa</label><input id="vPlate" placeholder="Opcional"></div></div><div style="height:12px"></div><button class="primary" style="width:100%" id="btnAddVehicle">Cadastrar</button></div><div class="card"><h2>Veículos</h2><div id="vehiclesList"></div></div></section>
 
-<section id="profile" class="page hidden"><div class="card"><h2>Meu perfil</h2><div id="profileInfo"></div><div style="height:12px"></div><label>Alterar minha foto</label><input id="myPhoto" type="file" accept="image/*" capture="user"><div style="height:16px"></div><button class="danger" style="width:100%" id="btnLogout">Sair</button></div></section>
+<section id="profile" class="page hidden">
+  <div class="card">
+    <h2>Meu perfil</h2>
+
+    <div id="profileInfo"></div>
+
+    <div style="height:12px"></div>
+
+    <label>Alterar minha foto</label>
+    <input id="myPhoto" type="file" accept="image/*" capture="user">
+
+    <div style="height:20px"></div>
+
+    <h2>Alterar senha</h2>
+    <div id="passMsg"></div>
+
+    <label>Nova senha</label>
+    <input id="newPass" type="password" placeholder="Mínimo 6 caracteres">
+
+    <div style="height:10px"></div>
+
+    <label>Confirmar nova senha</label>
+    <input id="confirmPass" type="password" placeholder="Digite novamente">
+
+    <div style="height:12px"></div>
+
+    <button class="primary" style="width:100%" id="btnChangePass">
+      Alterar senha
+    </button>
+
+    <div style="height:16px"></div>
+
+    <button class="danger" style="width:100%" id="btnLogout">Sair</button>
+  </div>
+</section> type="file" accept="image/*" capture="user"><div style="height:16px"></div><button class="danger" style="width:100%" id="btnLogout">Sair</button></div></section>
 </main>
 <nav><div class="navin"><button data-go="home" class="active"><b>⌂</b>Início</button><button data-go="register"><b>＋</b>Registrar</button><button data-go="history"><b>☷</b>Histórico</button><button data-go="report"><b>▤</b>Relatório</button><button data-go="profile"><b>●</b>Perfil</button></div></nav>
 </div>
 
 <script type="module">
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js';
 
 const firebaseConfig={
@@ -214,7 +248,7 @@ document.querySelectorAll('[data-go]').forEach(function(botao){
     go(botao.getAttribute('data-go'));
   });
 });
-$('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('myPhoto').onchange=changeMyPhoto;$('btnLogout').onclick=()=>signOut(auth);
+$('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('btnChangePass').onclick=changePassword;$('btnLogout').onclick=()=>signOut(auth);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>
