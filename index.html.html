@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f5fa8">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Horas Viagens29</title>
+<style>
+:root{--blue:#0f5fa8;--red:#e63b37;--bg:#f4f7fb;--card:#fff;--text:#1c2733;--muted:#6b7785;--line:#dfe6ee;--ok:#168249;--warn:#9b6900;--danger:#bf3333}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#0f5fa8,#173d5d)}.loginbox{width:min(430px,100%);background:#fff;border-radius:20px;padding:24px;box-shadow:0 20px 50px #0004}.brand{font-size:29px;font-weight:900;color:var(--blue)}.brand span{color:var(--red)}
+.app{max-width:820px;margin:auto;min-height:100vh}.top{position:sticky;top:0;z-index:10;color:#fff;background:linear-gradient(135deg,var(--blue),#174a78);padding:16px 18px;box-shadow:0 2px 10px #0002}.top h1{font-size:21px;margin:0}.top p{margin:3px 0 0;font-size:13px;opacity:.9}main{padding:16px 16px 90px}.card{background:#fff;border:1px solid #edf1f5;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 14px #18324b12}h2{font-size:18px;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:13px;font-weight:700;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:#fff}button{border:0;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e8f1f9;color:var(--blue)}.success{background:#e8f6ee;color:var(--ok)}.danger{background:#fdeaea;color:var(--danger)}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1;min-width:120px}.muted{font-size:13px;color:var(--muted)}.big{font-size:30px;font-weight:900;color:var(--blue)}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800;background:#eef4fa;color:var(--blue)}.open{background:#fff2d7;color:var(--warn)}.done{background:#e8f6ee;color:var(--ok)}.avatar{width:62px;height:62px;border-radius:50%;object-fit:cover;border:3px solid #e8f1f9;background:#eef4fa}.avatar.bigav{width:94px;height:94px}.placeholder{display:grid;place-items:center;font-size:26px;font-weight:900;color:var(--blue)}.ok,.error{padding:10px;border-radius:10px;font-size:13px;margin-bottom:10px}.ok{background:#e8f6ee;color:#176c3d}.error{background:#fdeaea;color:#922}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f7f9fc;border:1px solid var(--line);border-radius:14px;padding:12px}.stat b{display:block;font-size:22px;color:var(--blue);margin-top:4px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}th{font-size:12px;color:var(--muted)}nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:20}.navin{max-width:820px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr)}nav button{background:#fff;color:var(--muted);border-radius:0;padding:10px 4px;font-size:11px}nav button b{display:block;font-size:20px}.active{color:var(--blue)!important}.sync{display:flex;gap:8px;align-items:center}.dot{width:10px;height:10px;border-radius:50%;background:#d69500}.dot.online{background:var(--ok)}
+@media(max-width:600px){.grid,.statgrid{grid-template-columns:1fr}.full{grid-column:auto}table{font-size:12px}th,td{padding:8px 4px}}@media print{.top,nav,.no-print{display:none!important}body,.app{background:#fff}.card{box-shadow:none;border:0;padding:0}main{padding:0}}
+</style>
+</head>
+<body>
+<div id="loginView" class="login">
+  <div class="loginbox">
+    <div class="brand">Horas <span>Viagens29</span></div>
+    <p class="muted">Controle online de horas trabalhadas</p>
+    <div id="loginMsg"></div>
+    <label>Celular</label><input id="loginPhone" inputmode="tel" placeholder="(49) 99999-9999">
+    <div style="height:10px"></div><label>Senha</label><input id="loginPass" type="password" placeholder="Sua senha">
+    <div style="height:14px"></div><button class="primary" style="width:100%" id="btnLogin">Entrar</button>
+    <div style="height:9px"></div><button class="secondary" style="width:100%" id="btnCreateFirst">Criar primeiro acesso</button>
+    <p class="muted" style="margin-top:14px">Os dados desta versão são salvos no Firebase e ficam sincronizados entre os celulares.</p>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+<header class="top"><h1>Horas Viagens29</h1><p id="hello"></p></header>
+<main>
+<section id="home" class="page">
+  <div class="card"><div class="row"><div><div class="muted">Total no período</div><div id="homeTotal" class="big">0h 00min</div></div><span id="roleTag" class="tag"></span></div></div>
+  <div class="card"><h2>Atalhos</h2><div class="actions"><button class="primary" data-go="register">➕ Registrar horas</button><button class="secondary" data-go="history">📋 Histórico</button><button class="secondary" data-go="report">📄 Relatório</button></div></div>
+  <div id="adminCard" class="card hidden"><h2>Painel do administrador</h2><div id="adminStats" class="statgrid"></div><div style="height:12px"></div><div class="actions"><button class="secondary" data-go="drivers">👥 Motoristas</button><button class="secondary" data-go="vehicles">🚌 Veículos</button></div><div style="height:12px"></div><div class="sync"><span class="dot online"></span><span class="muted">Conectado ao Firebase</span></div></div>
+</section>
+
+<section id="register" class="page hidden">
+  <div id="openShiftBox"></div>
+  <div class="card"><h2>Iniciar trabalho</h2><div id="regMsg"></div><div class="grid"><div><label>Data</label><input id="rDate" type="date"></div><div><label>Veículo / placa</label><select id="rVehicle"></select></div><div><label>Horário de início</label><input id="rStart" type="time"><button class="secondary" style="width:100%;margin-top:7px" id="nowStart">Usar horário atual</button></div></div><div style="height:14px"></div><button class="primary" style="width:100%" id="btnStart">Salvar horário de início</button><p class="muted">Depois, quando terminar a viagem ou o trabalho, informe o horário final.</p></div>
+</section>
+
+<section id="history" class="page hidden"><div class="card"><h2>Meu histórico</h2><div class="grid no-print"><div><label>De</label><input id="hFrom" type="date"></div><div><label>Até</label><input id="hTo" type="date"></div></div><div style="height:10px"></div><div id="historyTable"></div></div></section>
+
+<section id="report" class="page hidden"><div class="card"><div style="text-align:center"><h2 style="margin-bottom:4px">DHAS AGÊNCIA DE VIAGEM E TRANSPORTES EIRELI</h2><div id="reportDriver"></div></div><div class="grid no-print" style="margin-top:14px"><div><label>De</label><input id="pFrom" type="date"></div><div><label>Até</label><input id="pTo" type="date"></div><div id="reportDriverFilter" class="full hidden"><label>Motorista</label><select id="pDriver"></select></div></div><div style="height:12px"></div><div id="reportTable"></div><div style="height:12px" class="no-print"><button class="primary" style="width:100%" onclick="window.print()">Gerar / salvar PDF</button></div></div></section>
+
+<section id="drivers" class="page hidden">
+  <div class="card"><h2>Cadastrar motorista</h2><div id="driverMsg"></div><div class="grid"><div><label>Nome</label><input id="dName"></div><div><label>Celular</label><input id="dPhone" inputmode="tel"></div><div><label>Senha inicial</label><input id="dPass" type="password"></div><div><label>Tipo</label><select id="dRole"><option value="driver">Motorista</option><option value="admin">Administrador</option></select></div><div class="full"><label>Foto do motorista</label><input id="dPhoto" type="file" accept="image/*" capture="user"></div></div><div style="height:12px"></div><button class="primary" style="width:100%" id="btnAddDriver">Cadastrar</button></div>
+  <div class="card"><h2>Usuários cadastrados</h2><p class="muted">Pode haver mais de um administrador. Para deixar seu perfil apenas como motorista, primeiro torne outra pessoa administradora.</p><div id="driversList"></div></div>
+</section>
+
+<section id="vehicles" class="page hidden"><div class="card"><h2>Cadastrar veículo</h2><div id="vehicleMsg"></div><div class="grid"><div><label>Nome / identificação</label><input id="vName" placeholder="Ex.: G8"></div><div><label>Placa</label><input id="vPlate" placeholder="Opcional"></div></div><div style="height:12px"></div><button class="primary" style="width:100%" id="btnAddVehicle">Cadastrar</button></div><div class="card"><h2>Veículos</h2><div id="vehiclesList"></div></div></section>
+
+<section id="profile" class="page hidden"><div class="card"><h2>Meu perfil</h2><div id="profileInfo"></div><div style="height:12px"></div><label>Alterar minha foto</label><input id="myPhoto" type="file" accept="image/*" capture="user"><div style="height:16px"></div><button class="danger" style="width:100%" id="btnLogout">Sair</button></div></section>
+</main>
+<nav><div class="navin"><button data-go="home" class="active"><b>⌂</b>Início</button><button data-go="register"><b>＋</b>Registrar</button><button data-go="history"><b>☷</b>Histórico</button><button data-go="report"><b>▤</b>Relatório</button><button data-go="profile"><b>●</b>Perfil</button></div></nav>
+</div>
+
+<script type="module">
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js';
+
+const firebaseConfig={
+ apiKey:'AIzaSyBQctJUd4Lw0DnRB3RoHOx6TPz4WtcGNC0',
+ authDomain:'horas-viagens29.firebaseapp.com',
+ projectId:'horas-viagens29',
+ storageBucket:'horas-viagens29.firebasestorage.app',
+ messagingSenderId:'661843989017',
+ appId:'1:661843989017:web:8e5132edd1d57b6986d088'
+};
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+let current=null, users=[], vehicles=[], records=[], unsub=[];
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const normPhone=s=>String(s||'').replace(/\D/g,'');
+const emailForPhone=p=>`${normPhone(p)}@horas-viagens29.app`;
+const fmtMin=m=>`${Math.floor((m||0)/60)}h ${String((m||0)%60).padStart(2,'0')}min`;
+const fmtClock=m=>`${String(Math.floor((m||0)/60)).padStart(2,'0')}:${String((m||0)%60).padStart(2,'0')}`;
+const today=()=>new Date().toISOString().slice(0,10);
+function calcMin(start,end){let [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number),a=sh*60+sm,b=eh*60+em;if(b<a)b+=1440;return b-a}
+function msg(id,text,type='ok'){let e=$(id);e.innerHTML=`<div class="${type}">${esc(text)}</div>`;setTimeout(()=>e.innerHTML='',4000)}
+function setNow(id){let d=new Date();$(id).value=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function go(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.go===id));if(id==='history')renderHistory();if(id==='report')renderReport()}
+function avatarHTML(u,big=false){if(u?.photo)return `<img class="avatar ${big?'bigav':''}" src="${u.photo}" alt="Foto">`;return `<div class="avatar ${big?'bigav':''} placeholder">${esc((u?.name||'?').charAt(0).toUpperCase())}</div>`}
+async function compressImage(file){if(!file)return '';return new Promise((resolve,reject)=>{let fr=new FileReader();fr.onerror=reject;fr.onload=()=>{let img=new Image();img.onerror=reject;img.onload=()=>{let max=320,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))};img.src=fr.result};fr.readAsDataURL(file)})}
+
+async function login(){try{await signInWithEmailAndPassword(auth,emailForPhone($('loginPhone').value),$('loginPass').value)}catch(e){msg('loginMsg','Celular ou senha incorretos.','error')}}
+async function createFirstAccess(){let phone=prompt('Digite seu número de celular com DDD:');if(!phone)return;phone=normPhone(phone);if(phone.length<10){msg('loginMsg','Digite o celular com DDD.','error');return}let name=prompt('Digite seu nome:');if(!name)return;let pass=prompt('Crie uma senha com pelo menos 6 caracteres:');if(!pass)return;if(pass.length<6){msg('loginMsg','A senha precisa ter pelo menos 6 caracteres.','error');return}try{let c=await createUserWithEmailAndPassword(auth,emailForPhone(phone),pass);try{await setDoc(doc(db,'users',c.user.uid),{name:name.trim(),phone,role:'driver',photo:'',createdAt:serverTimestamp()});alert('Conta criada com sucesso.');}catch(firestoreError){msg('loginMsg','O login foi criado, mas o perfil não foi salvo no Firestore. Erro: '+(firestoreError.code||firestoreError.message),'error')}}catch(e){let texto=e.code==='auth/email-already-in-use'?'Este celular já possui cadastro.':'Erro no cadastro: '+(e.code||e.message);msg('loginMsg',texto,'error');console.error('Erro ao criar acesso:',e)}}
+
+function stopListeners(){unsub.forEach(f=>f&&f());unsub=[]}
+async function loadProfile(uid){let snap=await getDoc(doc(db,'users',uid));if(!snap.exists())return null;return {id:uid,...snap.data()}}
+function startListeners(){stopListeners();
+ if(current.role==='admin'){
+   unsub.push(onSnapshot(collection(db,'users'),s=>{users=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));
+   unsub.push(onSnapshot(collection(db,'records'),s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));
+ }else{
+   users=[current];
+   unsub.push(onSnapshot(query(collection(db,'records'),where('userId','==',current.id)),s=>{records=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));
+ }
+ unsub.push(onSnapshot(collection(db,'vehicles'),s=>{vehicles=s.docs.map(d=>({id:d.id,...d.data()}));renderAll()}));
+}
+async function bootUser(user){current=await loadProfile(user.uid);if(!current){await signOut(auth);alert('Seu usuário existe na autenticação, mas ainda não possui perfil no banco.');return}
+ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('hello').textContent=`Olá, ${current.name}`;$('roleTag').textContent=current.role==='admin'?'Administrador':'Motorista';$('adminCard').classList.toggle('hidden',current.role!=='admin');$('reportDriverFilter').classList.toggle('hidden',current.role!=='admin');$('rDate').value=today();let first=new Date();first.setDate(1);$('hFrom').value=$('pFrom').value=first.toISOString().slice(0,10);$('hTo').value=$('pTo').value=today();startListeners();renderProfile();go('home')}
+onAuthStateChanged(auth,u=>{if(u)bootUser(u);else{stopListeners();current=null;$('appView').classList.add('hidden');$('loginView').classList.remove('hidden')}});
+
+function userRecords(uid=current.id){return records.filter(r=>r.userId===uid)}
+function getVehicle(id){return vehicles.find(v=>v.id===id)||{name:'-',plate:''}}
+function getUser(id){return users.find(u=>u.id===id)||{name:'-'}}
+function renderAll(){if(!current)return;renderVehiclesSelect();renderOpenShift();renderHome();renderHistory();renderReport();renderProfile();if(current.role==='admin'){renderDrivers();renderVehicles();renderAdminStats()}}
+function renderVehiclesSelect(){$('rVehicle').innerHTML=vehicles.map(v=>`<option value="${v.id}">${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</option>`).join('')||'<option value="">Cadastre um veículo</option>'}
+function renderHome(){let total=userRecords().filter(r=>r.end).reduce((s,r)=>s+(r.minutes||0),0);$('homeTotal').textContent=fmtMin(total)}
+function renderOpenShift(){let r=userRecords().find(x=>!x.end);if(!r){$('openShiftBox').innerHTML='';return}let v=getVehicle(r.vehicleId);$('openShiftBox').innerHTML=`<div class="card" style="border:2px solid #b7d7ef;background:#f7fbff"><div class="row"><div><h2 style="margin-bottom:4px">Trabalho em andamento</h2><span class="tag open">Aguardando horário final</span></div><b style="font-size:22px">${esc(r.start)}</b></div><p><b>${r.date.split('-').reverse().join('/')}</b> • ${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</p><label>Horário final</label><input id="finishTime" type="time"><button class="secondary" style="width:100%;margin-top:7px" id="nowFinish">Usar horário atual</button><div style="height:12px"></div><button class="success" style="width:100%" id="btnFinish">Finalizar e salvar horário final</button></div>`;$('nowFinish').onclick=()=>setNow('finishTime');$('btnFinish').onclick=()=>finishRecord(r.id)}
+async function startRecord(){if(userRecords().some(r=>!r.end)){msg('regMsg','Você já possui um trabalho em andamento. Finalize-o antes de iniciar outro.','error');return}let date=$('rDate').value,vehicleId=$('rVehicle').value,start=$('rStart').value;if(!date||!vehicleId||!start){msg('regMsg','Preencha data, veículo e horário de início.','error');return}try{await addDoc(collection(db,'records'),{userId:current.id,date,vehicleId,start,end:null,minutes:0,createdAt:serverTimestamp()});$('rStart').value='';msg('regMsg','Horário de início salvo.','ok')}catch(e){msg('regMsg','Não foi possível salvar. Verifique as regras do Firebase.','error')}}
+async function finishRecord(id){let end=$('finishTime').value;if(!end){alert('Informe o horário final.');return}let r=records.find(x=>x.id===id);await updateDoc(doc(db,'records',id),{end,minutes:calcMin(r.start,end),finishedAt:serverTimestamp()})}
+function rangeRows(uid,from,to){return records.filter(r=>r.userId===uid&&(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start))}
+function renderHistory(){if(!current)return;let rows=rangeRows(current.id,$('hFrom').value,$('hTo').value),total=rows.reduce((s,r)=>s+(r.minutes||0),0);$('historyTable').innerHTML=`<div class="row" style="margin-bottom:8px"><b>Total concluído</b><b>${fmtMin(total)}</b></div>`+(rows.length?`<div style="overflow:auto"><table><thead><tr><th>Data</th><th>Veículo</th><th>Início</th><th>Fim</th><th>Horas</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.date.split('-').reverse().join('/')}</td><td>${esc(getVehicle(r.vehicleId).name)}</td><td>${esc(r.start)}</td><td>${esc(r.end||'—')}</td><td>${r.end?fmtClock(r.minutes):'—'}</td><td><span class="tag ${r.end?'done':'open'}">${r.end?'Concluído':'Em andamento'}</span></td><td><button class="danger" style="padding:6px 8px" data-delrec="${r.id}">✕</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nenhum registro no período.</p>');document.querySelectorAll('[data-delrec]').forEach(b=>b.onclick=()=>delRecord(b.dataset.delrec))}
+async function delRecord(id){if(confirm('Excluir este registro?'))await deleteDoc(doc(db,'records',id))}
+function renderReport(){if(!current)return;let uid=current.id;if(current.role==='admin'){let s=$('pDriver'),prev=s.value;s.innerHTML=users.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');if(prev&&users.some(u=>u.id===prev))s.value=prev;else s.value=current.id;uid=s.value||current.id}let all=rangeRows(uid,$('pFrom').value,$('pTo').value),rows=all.filter(r=>r.end),open=all.length-rows.length,total=rows.reduce((s,r)=>s+(r.minutes||0),0),u=getUser(uid);$('reportDriver').textContent='Colaborador: '+u.name;$('reportTable').innerHTML=`<div style="overflow:auto"><table><thead><tr><th>Data</th><th>Placa / Veículo</th><th>Início</th><th>Fim</th><th>Horas Trabalhadas</th></tr></thead><tbody>${rows.map(r=>{let v=getVehicle(r.vehicleId);return `<tr><td>${r.date.split('-').reverse().join('/')}</td><td>${esc(v.plate||v.name)}</td><td>${esc(r.start)}</td><td>${esc(r.end)}</td><td>${fmtClock(r.minutes)}</td></tr>`}).join('')}</tbody><tfoot><tr><th colspan="4" style="text-align:right">Total:</th><th>${fmtClock(total)}</th></tr></tfoot></table></div>${open?`<p class="muted no-print">${open} registro(s) em andamento não entram no total.</p>`:''}<div style="margin-top:36px">Ass. Colaborador: ______________________________</div>`}
+
+async function addDriver(){let name=$('dName').value.trim(),phone=normPhone($('dPhone').value),pass=$('dPass').value,role=$('dRole').value,file=$('dPhoto').files[0];if(!name||!phone||pass.length<6){msg('driverMsg','Preencha nome, celular e uma senha de pelo menos 6 caracteres.','error');return}if(users.some(u=>u.phone===phone)){msg('driverMsg','Este celular já está cadastrado.','error');return}let secondary=initializeApp(firebaseConfig,'secondary-'+Date.now()),a2=getAuth(secondary);try{let c=await createUserWithEmailAndPassword(a2,emailForPhone(phone),pass),photo=await compressImage(file);await setDoc(doc(db,'users',c.user.uid),{name,phone,role,photo,createdAt:serverTimestamp()});await signOut(a2);await deleteApp(secondary);$('dName').value=$('dPhone').value=$('dPass').value='';$('dPhoto').value='';msg('driverMsg','Motorista cadastrado.','ok')}catch(e){try{await deleteApp(secondary)}catch{}msg('driverMsg',e.code==='auth/email-already-in-use'?'Este celular já possui acesso.':'Não foi possível cadastrar.','error')}}
+function renderDrivers(){$('driversList').innerHTML=users.map(u=>`<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="row"><div style="display:flex;align-items:center;gap:10px">${avatarHTML(u)}<div><b>${esc(u.name)}</b><div class="muted">${esc(u.phone||'')} • ${u.role==='admin'?'Administrador':'Motorista'}</div></div></div></div><div class="actions" style="margin-top:10px">${u.role==='driver'?`<button class="secondary" data-role="${u.id}|admin">Tornar administrador</button>`:(u.id!==current.id?`<button class="secondary" data-role="${u.id}|driver">Tornar somente motorista</button>`:'')} ${u.id!==current.id?`<button class="danger" data-deluser="${u.id}">Excluir perfil</button>`:''}</div></div>`).join('');document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{let [id,role]=b.dataset.role.split('|');setUserRole(id,role)});document.querySelectorAll('[data-deluser]').forEach(b=>b.onclick=()=>delUserProfile(b.dataset.deluser))}
+async function setUserRole(id,role){let u=users.find(x=>x.id===id);if(!u)return;if(role==='driver'&&u.role==='admin'&&users.filter(x=>x.role==='admin').length<=1){alert('Mantenha pelo menos um administrador. Primeiro torne outro usuário administrador.');return}if(confirm(`Alterar ${u.name} para ${role==='admin'?'administrador':'motorista'}?`))await updateDoc(doc(db,'users',id),{role})}
+async function delUserProfile(id){if(confirm('Excluir o perfil deste usuário do banco? O acesso de autenticação deverá ser removido pelo console do Firebase se quiser apagar totalmente.')){let rs=records.filter(r=>r.userId===id);for(const r of rs)await deleteDoc(doc(db,'records',r.id));await deleteDoc(doc(db,'users',id))}}
+function renderAdminStats(){let open=records.filter(r=>!r.end).length,done=records.filter(r=>r.end).length,drivers=users.filter(u=>u.role==='driver').length;$('adminStats').innerHTML=`<div class="stat"><span class="muted">Motoristas</span><b>${drivers}</b></div><div class="stat"><span class="muted">Em andamento</span><b>${open}</b></div><div class="stat"><span class="muted">Concluídos</span><b>${done}</b></div>`}
+async function addVehicle(){let name=$('vName').value.trim(),plate=$('vPlate').value.trim().toUpperCase();if(!name){msg('vehicleMsg','Informe o nome do veículo.','error');return}await addDoc(collection(db,'vehicles'),{name,plate,createdAt:serverTimestamp()});$('vName').value=$('vPlate').value='';msg('vehicleMsg','Veículo cadastrado.','ok')}
+function renderVehicles(){$('vehiclesList').innerHTML=vehicles.map(v=>`<div class="row" style="padding:10px 0;border-bottom:1px solid var(--line)"><div><b>${esc(v.name)}</b><div class="muted">${esc(v.plate||'Sem placa informada')}</div></div><button class="danger" data-delveh="${v.id}">Excluir</button></div>`).join('');document.querySelectorAll('[data-delveh]').forEach(b=>b.onclick=()=>delVehicle(b.dataset.delveh))}
+async function delVehicle(id){if(records.some(r=>r.vehicleId===id)){msg('vehicleMsg','Este veículo possui registros e não pode ser excluído.','error');return}if(confirm('Excluir este veículo?'))await deleteDoc(doc(db,'vehicles',id))}
+function renderProfile(){$('profileInfo').innerHTML=`<div style="display:flex;align-items:center;gap:14px">${avatarHTML(current,true)}<div><b>${esc(current.name)}</b><p class="muted" style="margin:5px 0 0">Celular: ${esc(current.phone)}<br>Perfil: ${current.role==='admin'?'Administrador':'Motorista'}</p></div></div>`}
+async function changeMyPhoto(e){let photo=await compressImage(e.target.files[0]);if(!photo)return;await updateDoc(doc(db,'users',current.id),{photo});current.photo=photo;renderProfile()}
+
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+$('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('myPhoto').onchange=changeMyPhoto;$('btnLogout').onclick=()=>signOut(auth);
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
