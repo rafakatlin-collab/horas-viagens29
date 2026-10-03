@@ -61,12 +61,37 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Gerar APK
-        working-directory: android
-        run: ./gradlew assembleDebug
+         - name: Restaurar chave de assinatura
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/viagens29-release.keystore
 
-      - name: Publicar APK
+      - name: Gerar APK release
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Assinar APK
+        run: |
+          BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n1)
+
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign" -v -p 4 \
+          android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          android/app/build/outputs/apk/release/Horas-Viagens29-release.apk
+
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" sign \
+          --ks android/app/viagens29-release.keystore \
+          --ks-key-alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
+          --ks-pass pass:"${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+          --key-pass pass:"${{ secrets.ANDROID_KEY_PASSWORD }}" \
+          android/app/build/outputs/apk/release/Horas-Viagens29-release.apk
+
+      - name: Verificar assinatura
+        run: |
+          BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n1)
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose \
+          android/app/build/outputs/apk/release/Horas-Viagens29-release.apk
+
+      - name: Publicar APK release
         uses: actions/upload-artifact@v4
         with:
-          name: Horas-Viagens29-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Horas-Viagens29-Release
+          path: android/app/build/outputs/apk/release/Horas-Viagens29-release.apk
