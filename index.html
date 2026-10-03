@@ -242,7 +242,31 @@ function renderVehicles(){$('vehiclesList').innerHTML=vehicles.map(v=>`<div clas
 async function delVehicle(id){if(records.some(r=>r.vehicleId===id)){msg('vehicleMsg','Este veículo possui registros e não pode ser excluído.','error');return}if(confirm('Excluir este veículo?'))await deleteDoc(doc(db,'vehicles',id))}
 function renderProfile(){$('profileInfo').innerHTML=`<div style="display:flex;align-items:center;gap:14px">${avatarHTML(current,true)}<div><b>${esc(current.name)}</b><p class="muted" style="margin:5px 0 0">Celular: ${esc(current.phone)}<br>Perfil: ${current.role==='admin'?'Administrador':'Motorista'}</p></div></div>`}
 async function changeMyPhoto(e){let photo=await compressImage(e.target.files[0]);if(!photo)return;await updateDoc(doc(db,'users',current.id),{photo});current.photo=photo;renderProfile()}
-changePassword()
+async function changePassword(){
+  const senha = $('newPass').value;
+  const confirmar = $('confirmPass').value;
+
+  if(senha.length < 6){
+    msg('passMsg','A senha precisa ter pelo menos 6 caracteres.','error');
+    return;
+  }
+
+  if(senha !== confirmar){
+    msg('passMsg','As senhas não são iguais.','error');
+    return;
+  }
+
+  try{
+    await updatePassword(auth.currentUser, senha);
+
+    $('newPass').value = '';
+    $('confirmPass').value = '';
+
+    msg('passMsg','Senha alterada com sucesso.','ok');
+  }catch(e){
+    msg('passMsg','Não foi possível alterar a senha. Saia, entre novamente e tente outra vez.','error');
+  }
+}
 document.querySelectorAll('[data-go]').forEach(function(botao){
   botao.addEventListener('click', function(){
     go(botao.getAttribute('data-go'));
