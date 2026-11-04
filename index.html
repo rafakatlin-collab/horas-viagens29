@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0f5fa8">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Horas Viagens29</title>
+<!-- Versão: correção manual de datas antigas 2026-11 -->
 <style>
 :root{--blue:#0f5fa8;--red:#e63b37;--bg:#f4f7fb;--card:#fff;--text:#1c2733;--muted:#6b7785;--line:#dfe6ee;--ok:#168249;--warn:#9b6900;--danger:#bf3333}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -66,7 +67,7 @@
 <section id="home" class="page">
   <div class="card"><div class="row"><div><div class="muted">Total no período</div><div id="homeTotal" class="big">0h 00min</div></div><span id="roleTag" class="tag"></span></div></div>
   <div class="card"><h2>Atalhos</h2><div class="actions"><button class="primary" data-go="register">➕ Registrar horas</button><button class="secondary" data-go="history">📋 Histórico</button><button class="secondary" data-go="report">📄 Relatório</button></div></div>
-  <div id="adminCard" class="card hidden"><h2>Painel do administrador</h2><div id="adminStats" class="statgrid"></div><div style="height:12px"></div><div class="actions"><button class="secondary" data-go="drivers">👥 Motoristas</button><button class="secondary" data-go="vehicles">🚌 Veículos</button></div><div style="height:12px"></div><div class="sync"><span class="dot online"></span><span class="muted">Conectado ao Firebase</span></div></div>
+  <div id="adminCard" class="card hidden"><h2>Painel do administrador</h2><div id="adminStats" class="statgrid"></div><div style="height:12px"></div><div class="actions"><button class="secondary" data-go="drivers">👥 Motoristas</button><button class="secondary" data-go="vehicles">🚌 Veículos</button><button class="secondary" data-go="legacyDates">📅 Corrigir datas antigas</button></div><div style="height:12px"></div><div class="sync"><span class="dot online"></span><span class="muted">Conectado ao Firebase</span></div></div>
 </section>
 
 <section id="register" class="page hidden">
@@ -75,6 +76,8 @@
 </section>
 
 <section id="history" class="page hidden"><div class="card"><h2>Meu histórico</h2><div class="grid no-print"><div><label>De</label><input id="hFrom" type="date"></div><div><label>Até</label><input id="hTo" type="date"></div></div><div style="height:10px"></div><div id="historyTable"></div></div></section>
+
+<section id="legacyDates" class="page hidden"><div class="card"><h2>Corrigir datas antigas</h2><p class="muted">Somente o administrador pode corrigir jornadas já finalizadas que não possuem data de término. Confirme a data com os registros do motorista antes de salvar.</p><div id="legacyDatesList"></div></div></section>
 
 <section id="report" class="page hidden"><div class="card"><div style="text-align:center"><h2 style="margin-bottom:4px">DHAS AGÊNCIA DE VIAGEM E TRANSPORTES EIRELI</h2><div id="reportDriver"></div></div><div class="grid no-print" style="margin-top:14px"><div><label>De</label><input id="pFrom" type="date"></div><div><label>Até</label><input id="pTo" type="date"></div><div id="reportDriverFilter" class="full hidden"><label>Motorista</label><select id="pDriver"></select></div></div><div style="height:12px"></div><div id="reportTable"></div><div style="height:12px" class="no-print"><button class="primary" style="width:100%" id="btnGeneratePdf">Baixar relatório em PDF</button><button class="secondary" style="width:100%;margin-top:8px" id="btnPrintReport">Imprimir / salvar PDF</button></div></div></section>
 
@@ -172,6 +175,7 @@ function go(id){
 
   window.scrollTo(0,0);
 
+  if(id === 'legacyDates') renderLegacyDates();
   if(id === 'history') renderHistory();
   if(id === 'report') renderReport();
   if(id === 'profile') renderProfile();
@@ -249,7 +253,7 @@ onAuthStateChanged(auth,u=>{if(u)bootUser(u);else{stopListeners();current=null;$
 function userRecords(uid=current.id){return records.filter(r=>r.userId===uid)}
 function getVehicle(id){return vehicles.find(v=>v.id===id)||{name:'-',plate:''}}
 function getUser(id){return users.find(u=>u.id===id)||{name:'-'}}
-function renderAll(){if(!current)return;renderVehiclesSelect();renderOpenShift();renderHome();renderHistory();renderReport();renderProfile();if(current.role==='admin'){renderDrivers();renderVehicles();renderAdminStats()}}
+function renderAll(){if(!current)return;renderVehiclesSelect();renderOpenShift();renderHome();renderHistory();renderReport();renderProfile();if(current.role==='admin'){renderDrivers();renderVehicles();renderAdminStats();renderLegacyDates()}}
 function renderVehiclesSelect(){$('rVehicle').innerHTML=vehicles.map(v=>`<option value="${v.id}">${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</option>`).join('')||'<option value="">Cadastre um veículo</option>'}
 function renderHome(){let total=userRecords().filter(r=>r.end).reduce((s,r)=>s+(r.minutes||0),0);$('homeTotal').textContent=fmtMin(total)}
 function renderOpenShift(){let r=userRecords().find(x=>!x.end);if(!r){$('openShiftBox').innerHTML='';return}let v=getVehicle(r.vehicleId);$('openShiftBox').innerHTML=`<div class="card" style="border:2px solid #b7d7ef;background:#f7fbff"><div class="row"><div><h2 style="margin-bottom:4px">Trabalho em andamento</h2><span class="tag open">Aguardando horário final</span></div><b style="font-size:22px">${esc(r.start)}</b></div><p><b>${r.date.split('-').reverse().join('/')}</b> • ${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</p><div class="grid"><div><label>Data de término</label><input id="finishDate" type="date"></div><div><label>Horário final</label><input id="finishTime" type="time"></div></div><button class="secondary" style="width:100%;margin-top:7px" id="nowFinish">Usar horário atual</button><div style="height:12px"></div><button class="success" style="width:100%" id="btnFinish">Finalizar e salvar horário final</button></div>`;$('finishDate').value=today();$('nowFinish').onclick=()=>{$('finishDate').value=today();setNow('finishTime')};$('btnFinish').onclick=()=>finishRecord(r.id)}
@@ -272,6 +276,32 @@ function renderHistory(){
  $('historyTable').innerHTML=`<div class="row" style="margin-bottom:8px"><b>Total concluído</b><b>${fmtMin(total)}</b></div>`+
  (rows.length?`<div style="overflow:auto"><table><thead><tr><th>Data início</th><th>Hora início</th><th>Data término</th><th>Hora término</th><th>Veículo</th><th>Horas</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fmtDate(r.date)}</td><td>${esc(r.start)}</td><td>${endDateText(r)}</td><td>${esc(r.end||'—')}</td><td>${esc(getVehicle(r.vehicleId).name)}</td><td>${r.end?fmtClock(r.minutes):'—'}</td><td><span class="tag ${r.end?'done':'open'}">${r.end?'Concluído':'Em andamento'}</span></td><td><button class="danger" style="padding:6px 8px" data-delrec="${r.id}">✕</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nenhum registro no período.</p>');
  document.querySelectorAll('[data-delrec]').forEach(b=>b.onclick=()=>delRecord(b.dataset.delrec));
+}
+function renderLegacyDates(){
+ if(!current||current.role!=='admin')return;
+ const el=$('legacyDatesList');if(!el)return;
+ const pending=records.filter(r=>r.end&&!r.endDate).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start));
+ if(!pending.length){el.innerHTML='<p class="ok">Nenhuma jornada antiga com data de término pendente. ✅</p>';return}
+ el.innerHTML=`<p class="muted"><b>${pending.length} registro(s)</b> precisam de confirmação. Não atribuímos datas automaticamente, pois uma jornada pode durar vários dias.</p>`+
+ pending.map(r=>`<div class="card" style="border:1px solid var(--line);box-shadow:none" data-legacy-row="${esc(r.id)}"><div><b>${esc(getUser(r.userId).name)}</b> • ${esc(getVehicle(r.vehicleId).name)}</div><p class="muted" style="margin:8px 0">Início: <b>${fmtDate(r.date)} às ${esc(r.start)}</b><br>Horário final salvo: <b>${esc(r.end)}</b><br>Duração anterior registrada: ${fmtClock(r.minutes)}</p><div class="grid"><div><label>Data correta do término</label><input type="date" data-legacy-date="${esc(r.id)}" min="${esc(r.date)}"></div><div><label>Hora do término</label><input type="time" data-legacy-time="${esc(r.id)}" value="${esc(r.end)}"></div></div><div style="height:10px"></div><button class="primary" data-legacy-save="${esc(r.id)}">Conferir e salvar correção</button></div>`).join('');
+ el.querySelectorAll('[data-legacy-save]').forEach(btn=>btn.onclick=()=>saveLegacyDate(btn.dataset.legacySave));
+}
+async function saveLegacyDate(id){
+ if(!current||current.role!=='admin'){alert('Somente o administrador pode corrigir datas antigas.');return}
+ const r=records.find(x=>x.id===id);
+ if(!r||!r.end||r.endDate){alert('Este registro já foi corrigido ou não está disponível.');return}
+ const box=[...document.querySelectorAll('[data-legacy-row]')].find(x=>x.dataset.legacyRow===id);
+ if(!box)return;
+ const endDate=box.querySelector('[data-legacy-date]').value;
+ const end=box.querySelector('[data-legacy-time]').value;
+ if(!endDate||!end){alert('Informe a data e o horário final confirmados.');return}
+ const minutes=calcMin(r.date,r.start,endDate,end);
+ if(!Number.isFinite(minutes)||minutes<=0){alert('O término deve ser posterior ao início. Verifique as datas.');return}
+ const description=`Motorista: ${getUser(r.userId).name}\nInício: ${fmtDate(r.date)} às ${r.start}\nTérmino: ${fmtDate(endDate)} às ${end}\nTotal recalculado: ${fmtClock(minutes)}\n\nConfirma que estes dados foram conferidos?`;
+ if(!confirm(description))return;
+ const btn=box.querySelector('[data-legacy-save]');btn.disabled=true;btn.textContent='Salvando...';
+ try{await updateDoc(doc(db,'records',id),{endDate,end,minutes,correctedAt:serverTimestamp(),correctedBy:current.id});alert('Data corrigida com sucesso. O histórico e o PDF serão atualizados.')}
+ catch(e){console.error('Erro ao corrigir data antiga:',e);alert('Não foi possível salvar a correção. Verifique sua conexão e as permissões do Firebase.');btn.disabled=false;btn.textContent='Conferir e salvar correção'}
 }
 async function delRecord(id){if(confirm('Excluir este registro?'))await deleteDoc(doc(db,'records',id))}
 function reportData(){
