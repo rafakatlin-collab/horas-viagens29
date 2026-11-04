@@ -350,19 +350,38 @@ function makeReportPdf(rows, total, driver, from, to){
  out+=`trailer\n<< /Size ${objects.length+1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF`;
  return new Blob([out],{type:'application/pdf'});
 }
-function generatePDF(){
+function blobToBase64(blob){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>resolve(String(reader.result).split(',')[1]);
+  reader.onerror=()=>reject(Error('Falha na leitura do arquivo'));
+  reader.readAsDataURL(blob);
+ });
+}
+async function generatePDF(){
  if(!current)return;
  const {rows,total,driver}=reportData();
- if(!rows.length){alert('Nao ha jornadas concluidas no periodo selecionado.');return}
+ if(!rows.length){alert('Não há jornadas concluídas no período selecionado.');return}
  const btn=$('btnGeneratePdf');btn.disabled=true;btn.textContent='Gerando PDF...';
  try{
   const pdf=makeReportPdf(rows,total,driver,$('pFrom').value,$('pTo').value);
-  const url=URL.createObjectURL(pdf);
-  const link=document.createElement('a');
-  link.href=url;link.download='horas-viagens29-'+($('pFrom').value||'inicio')+'-'+($('pTo').value||'fim')+'.pdf';
-  document.body.appendChild(link);link.click();link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
- }catch(e){console.error('Falha ao gerar PDF:',e);alert('O PDF nao foi gerado: '+(e.message||'erro desconhecido')+'. Tente Imprimir / salvar PDF.')}
+  const filename='horas-viagens29-'+($('pFrom').value||'inicio')+'-'+($('pTo').value||'fim')+'.pdf';
+  const cap=window.Capacitor;
+  if(cap?.isNativePlatform?.() && cap.Plugins?.Filesystem && cap.Plugins?.Share){
+   const data=await blobToBase64(pdf);
+   await cap.Plugins.Filesystem.writeFile({path:filename,data,directory:'CACHE'});
+   const saved=await cap.Plugins.Filesystem.getUri({path:filename,directory:'CACHE'});
+   await cap.Plugins.Share.share({title:'Relatório de horas Viagens29',files:[saved.uri],dialogTitle:'Salvar ou compartilhar relatório'});
+  }else if(cap?.isNativePlatform?.()){
+   throw Error('Este APK não possui os recursos de arquivos. Instale a nova versão do Android.');
+  }else{
+   const url=URL.createObjectURL(pdf);
+   const link=document.createElement('a');
+   link.href=url;link.download=filename;
+   document.body.appendChild(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }
+ }catch(e){console.error('Falha ao gerar PDF:',e);alert('Não foi possível salvar o PDF: '+(e.message||'erro desconhecido'));}
  finally{btn.disabled=false;btn.textContent='Baixar relatório em PDF'}
 }
 
