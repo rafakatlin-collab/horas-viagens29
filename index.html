@@ -76,7 +76,7 @@
 
 <section id="history" class="page hidden"><div class="card"><h2>Meu histórico</h2><div class="grid no-print"><div><label>De</label><input id="hFrom" type="date"></div><div><label>Até</label><input id="hTo" type="date"></div></div><div style="height:10px"></div><div id="historyTable"></div></div></section>
 
-<section id="report" class="page hidden"><div class="card"><div style="text-align:center"><h2 style="margin-bottom:4px">DHAS AGÊNCIA DE VIAGEM E TRANSPORTES EIRELI</h2><div id="reportDriver"></div></div><div class="grid no-print" style="margin-top:14px"><div><label>De</label><input id="pFrom" type="date"></div><div><label>Até</label><input id="pTo" type="date"></div><div id="reportDriverFilter" class="full hidden"><label>Motorista</label><select id="pDriver"></select></div></div><div style="height:12px"></div><div id="reportTable"></div><div style="height:12px" class="no-print"><button class="primary" style="width:100%" onclick="window.print()">Gerar / salvar PDF</button></div></div></section>
+<section id="report" class="page hidden"><div class="card"><div style="text-align:center"><h2 style="margin-bottom:4px">DHAS AGÊNCIA DE VIAGEM E TRANSPORTES EIRELI</h2><div id="reportDriver"></div></div><div class="grid no-print" style="margin-top:14px"><div><label>De</label><input id="pFrom" type="date"></div><div><label>Até</label><input id="pTo" type="date"></div><div id="reportDriverFilter" class="full hidden"><label>Motorista</label><select id="pDriver"></select></div></div><div style="height:12px"></div><div id="reportTable"></div><div style="height:12px" class="no-print"><button class="primary" style="width:100%" id="btnGeneratePdf">Baixar relatório em PDF</button><button class="secondary" style="width:100%;margin-top:8px" id="btnPrintReport">Imprimir / salvar PDF</button></div></div></section>
 
 <section id="drivers" class="page hidden">
   <div class="card"><h2>Cadastrar motorista</h2><div id="driverMsg"></div><div class="grid"><div><label>Nome</label><input id="dName"></div><div><label>Celular</label><input id="dPhone" inputmode="tel"></div><div><label>Senha inicial</label><input id="dPass" type="password"></div><div><label>Tipo</label><select id="dRole"><option value="driver">Motorista</option><option value="admin">Administrador</option></select></div><div class="full"><label>Foto do motorista</label><input id="dPhoto" type="file" accept="image/*" capture="user"></div></div><div style="height:12px"></div><button class="primary" style="width:100%" id="btnAddDriver">Cadastrar</button></div>
@@ -144,8 +144,13 @@ const normPhone=s=>String(s||'').replace(/\D/g,'');
 const emailForPhone=p=>`${normPhone(p)}@horas-viagens29.app`;
 const fmtMin=m=>`${Math.floor((m||0)/60)}h ${String((m||0)%60).padStart(2,'0')}min`;
 const fmtClock=m=>`${String(Math.floor((m||0)/60)).padStart(2,'0')}:${String((m||0)%60).padStart(2,'0')}`;
-const today=()=>new Date().toISOString().slice(0,10);
-function calcMin(start,end){let [sh,sm]=start.split(':').map(Number),[eh,em]=end.split(':').map(Number),a=sh*60+sm,b=eh*60+em;if(b<a)b+=1440;return b-a}
+const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+function calcMin(startDate,start,endDate,end){
+ const a=Date.parse(`${startDate}T${start}:00Z`), b=Date.parse(`${endDate}T${end}:00Z`);
+ return Number.isFinite(a)&&Number.isFinite(b)?Math.round((b-a)/60000):NaN;
+}
+const fmtDate=d=>d?d.split('-').reverse().join('/'):'Data não registrada';
+const endDateText=r=>r.end?(r.endDate?fmtDate(r.endDate):'Não registrada'):'—';
 function msg(id,text,type='ok'){let e=$(id);e.innerHTML=`<div class="${type}">${esc(text)}</div>`;setTimeout(()=>e.innerHTML='',4000)}
 function setNow(id){let d=new Date();$(id).value=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 function go(id){
@@ -247,13 +252,100 @@ function getUser(id){return users.find(u=>u.id===id)||{name:'-'}}
 function renderAll(){if(!current)return;renderVehiclesSelect();renderOpenShift();renderHome();renderHistory();renderReport();renderProfile();if(current.role==='admin'){renderDrivers();renderVehicles();renderAdminStats()}}
 function renderVehiclesSelect(){$('rVehicle').innerHTML=vehicles.map(v=>`<option value="${v.id}">${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</option>`).join('')||'<option value="">Cadastre um veículo</option>'}
 function renderHome(){let total=userRecords().filter(r=>r.end).reduce((s,r)=>s+(r.minutes||0),0);$('homeTotal').textContent=fmtMin(total)}
-function renderOpenShift(){let r=userRecords().find(x=>!x.end);if(!r){$('openShiftBox').innerHTML='';return}let v=getVehicle(r.vehicleId);$('openShiftBox').innerHTML=`<div class="card" style="border:2px solid #b7d7ef;background:#f7fbff"><div class="row"><div><h2 style="margin-bottom:4px">Trabalho em andamento</h2><span class="tag open">Aguardando horário final</span></div><b style="font-size:22px">${esc(r.start)}</b></div><p><b>${r.date.split('-').reverse().join('/')}</b> • ${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</p><label>Horário final</label><input id="finishTime" type="time"><button class="secondary" style="width:100%;margin-top:7px" id="nowFinish">Usar horário atual</button><div style="height:12px"></div><button class="success" style="width:100%" id="btnFinish">Finalizar e salvar horário final</button></div>`;$('nowFinish').onclick=()=>setNow('finishTime');$('btnFinish').onclick=()=>finishRecord(r.id)}
-async function startRecord(){if(userRecords().some(r=>!r.end)){msg('regMsg','Você já possui um trabalho em andamento. Finalize-o antes de iniciar outro.','error');return}let date=$('rDate').value,vehicleId=$('rVehicle').value,start=$('rStart').value;if(!date||!vehicleId||!start){msg('regMsg','Preencha data, veículo e horário de início.','error');return}try{await addDoc(collection(db,'records'),{userId:current.id,date,vehicleId,start,end:null,minutes:0,createdAt:serverTimestamp()});$('rStart').value='';msg('regMsg','Horário de início salvo.','ok')}catch(e){msg('regMsg','Não foi possível salvar. Verifique as regras do Firebase.','error')}}
-async function finishRecord(id){let end=$('finishTime').value;if(!end){alert('Informe o horário final.');return}let r=records.find(x=>x.id===id);await updateDoc(doc(db,'records',id),{end,minutes:calcMin(r.start,end),finishedAt:serverTimestamp()})}
+function renderOpenShift(){let r=userRecords().find(x=>!x.end);if(!r){$('openShiftBox').innerHTML='';return}let v=getVehicle(r.vehicleId);$('openShiftBox').innerHTML=`<div class="card" style="border:2px solid #b7d7ef;background:#f7fbff"><div class="row"><div><h2 style="margin-bottom:4px">Trabalho em andamento</h2><span class="tag open">Aguardando horário final</span></div><b style="font-size:22px">${esc(r.start)}</b></div><p><b>${r.date.split('-').reverse().join('/')}</b> • ${esc(v.name)}${v.plate?' - '+esc(v.plate):''}</p><div class="grid"><div><label>Data de término</label><input id="finishDate" type="date"></div><div><label>Horário final</label><input id="finishTime" type="time"></div></div><button class="secondary" style="width:100%;margin-top:7px" id="nowFinish">Usar horário atual</button><div style="height:12px"></div><button class="success" style="width:100%" id="btnFinish">Finalizar e salvar horário final</button></div>`;$('finishDate').value=today();$('nowFinish').onclick=()=>{$('finishDate').value=today();setNow('finishTime')};$('btnFinish').onclick=()=>finishRecord(r.id)}
+async function startRecord(){if(userRecords().some(r=>!r.end)){msg('regMsg','Você já possui um trabalho em andamento. Finalize-o antes de iniciar outro.','error');return}let date=$('rDate').value,vehicleId=$('rVehicle').value,start=$('rStart').value;if(!date||!vehicleId||!start){msg('regMsg','Preencha data, veículo e horário de início.','error');return}try{await addDoc(collection(db,'records'),{userId:current.id,date,vehicleId,start,end:null,endDate:null,minutes:0,createdAt:serverTimestamp()});$('rStart').value='';msg('regMsg','Horário de início salvo.','ok')}catch(e){msg('regMsg','Não foi possível salvar. Verifique as regras do Firebase.','error')}}
+async function finishRecord(id){
+ const end=$('finishTime').value,endDate=$('finishDate').value;
+ if(!end||!endDate){alert('Informe a data e o horário final.');return}
+ const r=records.find(x=>x.id===id);if(!r)return;
+ const minutes=calcMin(r.date,r.start,endDate,end);
+ if(!Number.isFinite(minutes)||minutes<=0){alert('O término deve ser posterior ao início. Confira as datas e horários.');return}
+ const btn=$('btnFinish');btn.disabled=true;
+ try{await updateDoc(doc(db,'records',id),{end,endDate,minutes,finishedAt:serverTimestamp()})}
+ catch(e){console.error(e);alert('Não foi possível salvar o término. Verifique sua conexão.')}
+ finally{btn.disabled=false}
+}
 function rangeRows(uid,from,to){return records.filter(r=>r.userId===uid&&(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start))}
-function renderHistory(){if(!current)return;let rows=rangeRows(current.id,$('hFrom').value,$('hTo').value),total=rows.reduce((s,r)=>s+(r.minutes||0),0);$('historyTable').innerHTML=`<div class="row" style="margin-bottom:8px"><b>Total concluído</b><b>${fmtMin(total)}</b></div>`+(rows.length?`<div style="overflow:auto"><table><thead><tr><th>Data</th><th>Veículo</th><th>Início</th><th>Fim</th><th>Horas</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.date.split('-').reverse().join('/')}</td><td>${esc(getVehicle(r.vehicleId).name)}</td><td>${esc(r.start)}</td><td>${esc(r.end||'—')}</td><td>${r.end?fmtClock(r.minutes):'—'}</td><td><span class="tag ${r.end?'done':'open'}">${r.end?'Concluído':'Em andamento'}</span></td><td><button class="danger" style="padding:6px 8px" data-delrec="${r.id}">✕</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nenhum registro no período.</p>');document.querySelectorAll('[data-delrec]').forEach(b=>b.onclick=()=>delRecord(b.dataset.delrec))}
+function renderHistory(){
+ if(!current)return;
+ const rows=rangeRows(current.id,$('hFrom').value,$('hTo').value),total=rows.reduce((sum,r)=>sum+(r.minutes||0),0);
+ $('historyTable').innerHTML=`<div class="row" style="margin-bottom:8px"><b>Total concluído</b><b>${fmtMin(total)}</b></div>`+
+ (rows.length?`<div style="overflow:auto"><table><thead><tr><th>Data início</th><th>Hora início</th><th>Data término</th><th>Hora término</th><th>Veículo</th><th>Horas</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fmtDate(r.date)}</td><td>${esc(r.start)}</td><td>${endDateText(r)}</td><td>${esc(r.end||'—')}</td><td>${esc(getVehicle(r.vehicleId).name)}</td><td>${r.end?fmtClock(r.minutes):'—'}</td><td><span class="tag ${r.end?'done':'open'}">${r.end?'Concluído':'Em andamento'}</span></td><td><button class="danger" style="padding:6px 8px" data-delrec="${r.id}">✕</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nenhum registro no período.</p>');
+ document.querySelectorAll('[data-delrec]').forEach(b=>b.onclick=()=>delRecord(b.dataset.delrec));
+}
 async function delRecord(id){if(confirm('Excluir este registro?'))await deleteDoc(doc(db,'records',id))}
-function renderReport(){if(!current)return;let uid=current.id;if(current.role==='admin'){let s=$('pDriver'),prev=s.value;s.innerHTML=users.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');if(prev&&users.some(u=>u.id===prev))s.value=prev;else s.value=current.id;uid=s.value||current.id}let all=rangeRows(uid,$('pFrom').value,$('pTo').value),rows=all.filter(r=>r.end),open=all.length-rows.length,total=rows.reduce((s,r)=>s+(r.minutes||0),0),u=getUser(uid);$('reportDriver').textContent='Colaborador: '+u.name;$('reportTable').innerHTML=`<div style="overflow:auto"><table><thead><tr><th>Data</th><th>Placa / Veículo</th><th>Início</th><th>Fim</th><th>Horas Trabalhadas</th></tr></thead><tbody>${rows.map(r=>{let v=getVehicle(r.vehicleId);return `<tr><td>${r.date.split('-').reverse().join('/')}</td><td>${esc(v.plate||v.name)}</td><td>${esc(r.start)}</td><td>${esc(r.end)}</td><td>${fmtClock(r.minutes)}</td></tr>`}).join('')}</tbody><tfoot><tr><th colspan="4" style="text-align:right">Total:</th><th>${fmtClock(total)}</th></tr></tfoot></table></div>${open?`<p class="muted no-print">${open} registro(s) em andamento não entram no total.</p>`:''}<div style="margin-top:36px">Ass. Colaborador: ______________________________</div>`}
+function reportData(){
+ let uid=current.id;
+ if(current.role==='admin'){
+  const selector=$('pDriver'),prev=selector.value;
+  selector.innerHTML=users.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');
+  selector.value=prev&&users.some(u=>u.id===prev)?prev:current.id;
+  uid=selector.value||current.id;
+ }
+ const all=rangeRows(uid,$('pFrom').value,$('pTo').value),rows=all.filter(r=>r.end);
+ return {rows,open:all.length-rows.length,total:rows.reduce((sum,r)=>sum+(r.minutes||0),0),driver:getUser(uid)};
+}
+function renderReport(){
+ if(!current)return;
+ const {rows,open,total,driver}=reportData();
+ $('reportDriver').textContent='Colaborador: '+driver.name;
+ $('reportTable').innerHTML=`<div style="overflow:auto"><table><thead><tr><th>Data início</th><th>Hora início</th><th>Data término</th><th>Hora término</th><th>Placa / Veículo</th><th>Horas</th></tr></thead><tbody>${rows.map(r=>{let v=getVehicle(r.vehicleId);return `<tr><td>${fmtDate(r.date)}</td><td>${esc(r.start)}</td><td>${endDateText(r)}</td><td>${esc(r.end)}</td><td>${esc(v.plate||v.name)}</td><td>${fmtClock(r.minutes)}</td></tr>`}).join('')}</tbody><tfoot><tr><th colspan="5" style="text-align:right">Total:</th><th>${fmtClock(total)}</th></tr></tfoot></table></div>${open?`<p class="muted no-print">${open} registro(s) em andamento não entram no total.</p>`:''}<div style="margin-top:36px">Ass. Colaborador: ______________________________</div>`;
+}
+let pdfLibPromise;
+function loadPdfLib(){
+ if(window.jspdf?.jsPDF)return Promise.resolve(window.jspdf.jsPDF);
+ if(!pdfLibPromise)pdfLibPromise=new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+  script.onload=()=>window.jspdf?.jsPDF?resolve(window.jspdf.jsPDF):reject(Error('PDF indisponível'));
+  script.onerror=()=>reject(Error('Falha ao carregar biblioteca PDF'));
+  document.head.appendChild(script);
+ }).catch(e=>{pdfLibPromise=null;throw e});
+ return pdfLibPromise;
+}
+async function generatePDF(){
+ if(!current)return;
+ const {rows,total,driver}=reportData();
+ if(!rows.length){alert('Não há jornadas concluídas no período selecionado.');return}
+ const btn=$('btnGeneratePdf');btn.disabled=true;btn.textContent='Gerando PDF...';
+ try{
+  const JsPDF=await loadPdfLib(),pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const width=pdf.internal.pageSize.getWidth(),margin=12;
+  let y=39;
+  function header(){
+   pdf.setFont('helvetica','bold');pdf.setFontSize(13);
+   pdf.text('DHAS AGENCIA DE VIAGEM E TRANSPORTES EIRELI',width/2,13,{align:'center'});
+   pdf.setFontSize(10);pdf.setFont('helvetica','normal');
+   pdf.text('Colaborador: '+driver.name,margin,22);
+   pdf.text('Periodo: '+fmtDate($('pFrom').value)+' a '+fmtDate($('pTo').value),margin,29);
+   y=39;
+   pdf.setFillColor(235,242,250);pdf.rect(margin,y-5,width-margin*2,8,'F');
+   const headers=['Data inicio','Hora inicio','Data termino','Hora termino','Placa / Veiculo','Horas'];
+   const xs=[12,49,82,126,162,264];
+   pdf.setFont('helvetica','bold');pdf.setFontSize(9);
+   headers.forEach((h,i)=>pdf.text(h,xs[i],y));pdf.setFont('helvetica','normal');y+=10;
+  }
+  header();
+  const xs=[12,49,82,126,162,264];
+  for(const r of rows){
+   if(y>184){pdf.addPage();header()}
+   const v=getVehicle(r.vehicleId);
+   const values=[fmtDate(r.date),r.start,r.endDate?fmtDate(r.endDate):'Nao registrada',r.end,v.plate||v.name,fmtClock(r.minutes)];
+   pdf.setFontSize(9);
+   values.forEach((value,i)=>pdf.text(String(value).slice(0,i===4?31:24),xs[i],y));
+   pdf.setDrawColor(225,230,235);pdf.line(margin,y+2,width-margin,y+2);
+   y+=9;
+  }
+  if(y>174){pdf.addPage();header()}
+  pdf.setFont('helvetica','bold');pdf.setFontSize(11);
+  pdf.text('Total trabalhado: '+fmtClock(total),width-margin,y+5,{align:'right'});
+  pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+  pdf.text('Ass. Colaborador: ___________________________________',margin,Math.min(y+24,200));
+  const filename='horas-viagens29-'+($('pFrom').value||'inicio')+'-'+($('pTo').value||'fim')+'.pdf';
+  pdf.save(filename);
+ }catch(e){console.error(e);alert('Não foi possível gerar o PDF. Verifique sua conexão e tente novamente. Como alternativa, use Imprimir / salvar PDF.')}
+ finally{btn.disabled=false;btn.textContent='Baixar relatório em PDF'}
+}
 
 async function addDriver(){let name=$('dName').value.trim(),phone=normPhone($('dPhone').value),pass=$('dPass').value,role=$('dRole').value,file=$('dPhoto').files[0];if(!name||!phone||pass.length<6){msg('driverMsg','Preencha nome, celular e uma senha de pelo menos 6 caracteres.','error');return}if(users.some(u=>u.phone===phone)){msg('driverMsg','Este celular já está cadastrado.','error');return}let secondary=initializeApp(firebaseConfig,'secondary-'+Date.now()),a2=getAuth(secondary);try{let c=await createUserWithEmailAndPassword(a2,emailForPhone(phone),pass),photo=await compressImage(file);await setDoc(doc(db,'users',c.user.uid),{name,phone,role,photo,createdAt:serverTimestamp()});await signOut(a2);await deleteApp(secondary);$('dName').value=$('dPhone').value=$('dPass').value='';$('dPhoto').value='';msg('driverMsg','Motorista cadastrado.','ok')}catch(e){try{await deleteApp(secondary)}catch{}msg('driverMsg',e.code==='auth/email-already-in-use'?'Este celular já possui acesso.':'Não foi possível cadastrar.','error')}}
 function renderDrivers(){$('driversList').innerHTML=users.map(u=>`<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="row"><div style="display:flex;align-items:center;gap:10px">${avatarHTML(u)}<div><b>${esc(u.name)}</b><div class="muted">${esc(u.phone||'')} • ${u.role==='admin'?'Administrador':'Motorista'}</div></div></div></div><div class="actions" style="margin-top:10px">${u.role==='driver'?`<button class="secondary" data-role="${u.id}|admin">Tornar administrador</button>`:(u.id!==current.id?`<button class="secondary" data-role="${u.id}|driver">Tornar somente motorista</button>`:'')} ${u.id!==current.id?`<button class="danger" data-deluser="${u.id}">Excluir perfil</button>`:''}</div></div>`).join('');document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{let [id,role]=b.dataset.role.split('|');setUserRole(id,role)});document.querySelectorAll('[data-deluser]').forEach(b=>b.onclick=()=>delUserProfile(b.dataset.deluser))}
@@ -295,7 +387,7 @@ document.querySelectorAll('[data-go]').forEach(function(botao){
     go(botao.getAttribute('data-go'));
   });
 });
-$('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('btnChangePass').onclick=changePassword;$('btnLogout').onclick=()=>signOut(auth);
+$('btnGeneratePdf').onclick=generatePDF;$('btnPrintReport').onclick=()=>window.print();$('btnLogin').onclick=login;$('btnCreateFirst').onclick=createFirstAccess;$('nowStart').onclick=()=>setNow('rStart');$('btnStart').onclick=startRecord;$('hFrom').onchange=$('hTo').onchange=renderHistory;$('pFrom').onchange=$('pTo').onchange=renderReport;$('pDriver').onchange=renderReport;$('btnAddDriver').onclick=addDriver;$('btnAddVehicle').onclick=addVehicle;$('btnChangePass').onclick=changePassword;$('btnLogout').onclick=()=>signOut(auth);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 window.addEventListener('load',()=>{
   setTimeout(()=>{
