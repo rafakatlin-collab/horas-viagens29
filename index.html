@@ -291,59 +291,78 @@ function renderReport(){
  $('reportDriver').textContent='Colaborador: '+driver.name;
  $('reportTable').innerHTML=`<div style="overflow:auto"><table><thead><tr><th>Data início</th><th>Hora início</th><th>Data término</th><th>Hora término</th><th>Placa / Veículo</th><th>Horas</th></tr></thead><tbody>${rows.map(r=>{let v=getVehicle(r.vehicleId);return `<tr><td>${fmtDate(r.date)}</td><td>${esc(r.start)}</td><td>${endDateText(r)}</td><td>${esc(r.end)}</td><td>${esc(v.plate||v.name)}</td><td>${fmtClock(r.minutes)}</td></tr>`}).join('')}</tbody><tfoot><tr><th colspan="5" style="text-align:right">Total:</th><th>${fmtClock(total)}</th></tr></tfoot></table></div>${open?`<p class="muted no-print">${open} registro(s) em andamento não entram no total.</p>`:''}<div style="margin-top:36px">Ass. Colaborador: ______________________________</div>`;
 }
-let pdfLibPromise;
-function loadPdfLib(){
- if(window.jspdf?.jsPDF)return Promise.resolve(window.jspdf.jsPDF);
- if(!pdfLibPromise)pdfLibPromise=new Promise((resolve,reject)=>{
-  const script=document.createElement('script');
-  script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
-  script.onload=()=>window.jspdf?.jsPDF?resolve(window.jspdf.jsPDF):reject(Error('PDF indisponível'));
-  script.onerror=()=>reject(Error('Falha ao carregar biblioteca PDF'));
-  document.head.appendChild(script);
- }).catch(e=>{pdfLibPromise=null;throw e});
- return pdfLibPromise;
+// Gerador de PDF independente de bibliotecas externas.
+// Evita bloqueio de CDNs em navegadores e aplicativos instalados.
+function makeReportPdf(rows, total, driver, from, to){
+ const clean=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'?');
+ const pdfEscape=value=>clean(value).replace(/[\\()]/g,'\\$&');
+ const pages=[];
+ let content='',y=0;
+ const text=(value,x,top,size=10,bold=false)=>{
+  content+=`BT /${bold?'F2':'F1'} ${size} Tf 1 0 0 1 ${x} ${595-top} Tm (${pdfEscape(value)}) Tj ET\n`;
+ };
+ const line=(top)=>{content+=`0.85 G 35 ${595-top} m 807 ${595-top} l S 0 G\n`};
+ const header=()=>{
+  text('DHAS AGENCIA DE VIAGEM E TRANSPORTES EIRELI',208,33,15,true);
+  text('Colaborador: '+driver.name,35,59,11);
+  text('Periodo: '+fmtDate(from)+' a '+fmtDate(to),35,77,10);
+  line(90);
+  const labels=['Data inicio','Hora inicio','Data termino','Hora termino','Placa / Veiculo','Horas'];
+  const xs=[35,147,249,365,473,754];
+  labels.forEach((t,i)=>text(t,xs[i],108,9,true));
+  line(115);y=135;
+ };
+ const startPage=()=>{content='';header()};
+ const finishPage=()=>{pages.push(content)};
+ startPage();
+ for(const r of rows){
+  if(y>525){finishPage();startPage()}
+  const v=getVehicle(r.vehicleId);
+  const values=[fmtDate(r.date),r.start,r.endDate?fmtDate(r.endDate):'Nao registrada',r.end,(v.plate||v.name).slice(0,37),fmtClock(r.minutes)];
+  const xs=[35,147,249,365,473,754];
+  values.forEach((value,i)=>text(value,xs[i],y,9));
+  line(y+7);y+=22;
+ }
+ if(y>510){finishPage();startPage()}
+ text('Total trabalhado: '+fmtClock(total),640,y+13,11,true);
+ text('Ass. Colaborador: __________________________________',35,y+47,10);
+ finishPage();
+ // PDF com páginas A4 horizontais e fontes padrão, sem conexão externa.
+ const objects=[];
+ const add=value=>{objects.push(value);return objects.length};
+ const catalog=add('');
+ const pagesRoot=add('');
+ const regular=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+ const bold=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+ const kids=[];
+ for(const page of pages){
+  const stream=add(`<< /Length ${page.length} >>\nstream\n${page}endstream`);
+  const p=add(`<< /Type /Page /Parent ${pagesRoot} 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 ${regular} 0 R /F2 ${bold} 0 R >> >> /Contents ${stream} 0 R >>`);
+  kids.push(`${p} 0 R`);
+ }
+ objects[catalog-1]=`<< /Type /Catalog /Pages ${pagesRoot} 0 R >>`;
+ objects[pagesRoot-1]=`<< /Type /Pages /Count ${kids.length} /Kids [${kids.join(' ')}] >>`;
+ let out='%PDF-1.4\n',positions=[0];
+ objects.forEach((obj,i)=>{positions.push(out.length);out+=`${i+1} 0 obj\n${obj}\nendobj\n`});
+ const xref=out.length;
+ out+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+ for(let i=1;i<positions.length;i++)out+=`${String(positions[i]).padStart(10,'0')} 00000 n \n`;
+ out+=`trailer\n<< /Size ${objects.length+1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+ return new Blob([out],{type:'application/pdf'});
 }
-async function generatePDF(){
+function generatePDF(){
  if(!current)return;
  const {rows,total,driver}=reportData();
- if(!rows.length){alert('Não há jornadas concluídas no período selecionado.');return}
+ if(!rows.length){alert('Nao ha jornadas concluidas no periodo selecionado.');return}
  const btn=$('btnGeneratePdf');btn.disabled=true;btn.textContent='Gerando PDF...';
  try{
-  const JsPDF=await loadPdfLib(),pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  const width=pdf.internal.pageSize.getWidth(),margin=12;
-  let y=39;
-  function header(){
-   pdf.setFont('helvetica','bold');pdf.setFontSize(13);
-   pdf.text('DHAS AGENCIA DE VIAGEM E TRANSPORTES EIRELI',width/2,13,{align:'center'});
-   pdf.setFontSize(10);pdf.setFont('helvetica','normal');
-   pdf.text('Colaborador: '+driver.name,margin,22);
-   pdf.text('Periodo: '+fmtDate($('pFrom').value)+' a '+fmtDate($('pTo').value),margin,29);
-   y=39;
-   pdf.setFillColor(235,242,250);pdf.rect(margin,y-5,width-margin*2,8,'F');
-   const headers=['Data inicio','Hora inicio','Data termino','Hora termino','Placa / Veiculo','Horas'];
-   const xs=[12,49,82,126,162,264];
-   pdf.setFont('helvetica','bold');pdf.setFontSize(9);
-   headers.forEach((h,i)=>pdf.text(h,xs[i],y));pdf.setFont('helvetica','normal');y+=10;
-  }
-  header();
-  const xs=[12,49,82,126,162,264];
-  for(const r of rows){
-   if(y>184){pdf.addPage();header()}
-   const v=getVehicle(r.vehicleId);
-   const values=[fmtDate(r.date),r.start,r.endDate?fmtDate(r.endDate):'Nao registrada',r.end,v.plate||v.name,fmtClock(r.minutes)];
-   pdf.setFontSize(9);
-   values.forEach((value,i)=>pdf.text(String(value).slice(0,i===4?31:24),xs[i],y));
-   pdf.setDrawColor(225,230,235);pdf.line(margin,y+2,width-margin,y+2);
-   y+=9;
-  }
-  if(y>174){pdf.addPage();header()}
-  pdf.setFont('helvetica','bold');pdf.setFontSize(11);
-  pdf.text('Total trabalhado: '+fmtClock(total),width-margin,y+5,{align:'right'});
-  pdf.setFont('helvetica','normal');pdf.setFontSize(10);
-  pdf.text('Ass. Colaborador: ___________________________________',margin,Math.min(y+24,200));
-  const filename='horas-viagens29-'+($('pFrom').value||'inicio')+'-'+($('pTo').value||'fim')+'.pdf';
-  pdf.save(filename);
- }catch(e){console.error(e);alert('Não foi possível gerar o PDF. Verifique sua conexão e tente novamente. Como alternativa, use Imprimir / salvar PDF.')}
+  const pdf=makeReportPdf(rows,total,driver,$('pFrom').value,$('pTo').value);
+  const url=URL.createObjectURL(pdf);
+  const link=document.createElement('a');
+  link.href=url;link.download='horas-viagens29-'+($('pFrom').value||'inicio')+'-'+($('pTo').value||'fim')+'.pdf';
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }catch(e){console.error('Falha ao gerar PDF:',e);alert('O PDF nao foi gerado: '+(e.message||'erro desconhecido')+'. Tente Imprimir / salvar PDF.')}
  finally{btn.disabled=false;btn.textContent='Baixar relatório em PDF'}
 }
 
